@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.reviews.mapper.ReviewsMapper">
+	<!-- 리뷰  리스트 -->
+	<select id="list" resultType="com.bangkok.reviews.vo.ReviewsVO">
+		select reviewNo, title, image, startDay, endDay, sub_image
+		from (
+			select rownum rnum,reviewNo, title, image, startDay, endDay, sub_image
+			from (
+				select
+				reviewNo,image,title,startDay, endDay, sub_image
+				from
+				reviews
+			   where trunc(sysdate) &gt;= trunc(startday)
+				and trunc(sysdate) &lt;= trunc(endDay) 
+				order by reviewNo desc
+			)
+		)
+		where rnum between #{startRow} and #{endRow}
+	</select>
+
+	<!-- 리뷰  리스트 페이지 처리를 위한 전체 데이터 개수 가져오기 -->
+	<select id="getTotalRow" resultType="Long">
+		select count(*)
+		from reviews
+	</select>
+	
+
+	<!-- 리뷰  글보기 -->
+	<select id="view" resultType="com.bangkok.reviews.vo.ReviewsVO">
+	select rv.service_Rating,rv.cleanliness_Rating,rv.convenience_Rating,rv.Amenities_Rating,rv.reviewTitle,rv.reviewContent,
+	h.title,r.room_type
+	from reviews rv,hotel_reservations hr,Hotel h,hotel_room r
+	 WHERE reservations_no = #{reservations_no} and(#{reservations_no} =hr.reservation_no)and(hr.roomNumber=r.rno)and(r.no=h.no)
+	</select>
+	
+<select id="getHasReview" resultType="String">
+    SELECT has_review 
+    FROM hotel_reservations 
+    WHERE RESERVATION_NO = #{reservations_no}
+</select>
+	<!-- 리뷰  등록 -->
+	<insert id="write">
+		
+		<!-- 먼저 ReviewsVO의 no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다. -->
+			insert into reviews(reviewNo,service_Rating,cleanliness_Rating,convenience_Rating,Amenities_Rating,reviewContent,reservations_no,reviewTitle)
+		values(reviewNo_seq.nextval,#{service_Rating},#{cleanliness_Rating},#{convenience_Rating},#{Amenities_Rating},#{reviewContent},#{reservations_no},#{reviewTitle})
+		
+	</insert>
+
+	<!-- 리뷰  글수정 -->
+	<update id="update">
+		update reviews
+		set title = #{title}, image = #{image},sub_image = #{sub_image}, startDay = #{startDay}, endDay = #{endDay}
+		where reviewNo = ${reviewNo}  
+	</update>
+	<!-- 리뷰  확인 여부 -->
+	<update id="hasReview">
+		update hotel_reservations
+		set has_review ='N'
+		where RESERVATION_NO = #{reservations_no} 
+	</update>
+	<!-- 리뷰  확인 Y 바꾸기 -->
+	<update id="hasReviewMinus">
+		update hotel_reservations
+		set has_review ='Y'
+		where RESERVATION_NO = #{reservations_no} 
+	</update>
+
+	<!-- 리뷰  글수정 --> 
+	<delete id="delete">
+	<![CDATA[
+ 		delete from reviews 
+ 		where reservations_no = ${reservations_no}
+  	]]> 
+	</delete>
+
+</mapper>

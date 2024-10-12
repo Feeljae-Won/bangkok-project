@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.member.mapper.MemberMapper">
+	<select id="list"
+		parameterType="com.bangkok.util.page.PageObject"
+		resultType="com.bangkok.member.vo.MemberVO">
+    <![CDATA[
+    SELECT email, name, nickName, tel, regDate, conDate, status, gradeName, photo, birth
+    FROM (
+        SELECT m.email, m.name, m.nickName, m.tel, m.photo, m.regDate, m.conDate, m.status, g.gradeName, m.birth,
+               ROW_NUMBER() OVER (ORDER BY m.email DESC) AS rnum
+        FROM member m
+        JOIN grade g ON m.gradeNo = g.gradeNo
+        WHERE m.name LIKE '%' || #{word, jdbcType=VARCHAR} || '%' 
+           OR m.email LIKE '%' || #{word, jdbcType=VARCHAR} || '%'
+    )
+    WHERE rnum BETWEEN #{startRow} AND #{endRow}
+    ]]>
+	</select>
+
+	<!-- 전체 데이터 갯수 조회 -->
+	<select id="getTotalRow"
+		parameterType="com.bangkok.util.page.PageObject" resultType="Long">
+    <![CDATA[
+    SELECT COUNT(*)
+    FROM member
+    WHERE name LIKE '%' || #{word, jdbcType=VARCHAR} || '%' 
+       OR email LIKE '%' || #{word, jdbcType=VARCHAR} || '%'
+    ]]>
+	</select>
+
+
+
+	<!-- 이메일 존재 여부를 확인하는 쿼리 -->
+	<select id="checkEmail" parameterType="string"
+		resultType="integer">
+		SELECT COUNT(*)
+		FROM member
+		WHERE email = #{email}
+	</select>
+
+	<!-- 닉네임 존재 여부를 확인하는 쿼리 -->
+	<select id="checkNickname" parameterType="string"
+		resultType="integer">
+		SELECT COUNT(*)
+		FROM member
+		WHERE nickName = #{nickName}
+	</select>
+
+	<insert id="insertMember"
+		parameterType="com.bangkok.member.vo.MemberVO">
+		INSERT INTO member (
+		email, pw, name, birth, tel, photo,
+		gradeNo, nickName, gender
+		) VALUES (
+		#{email,jdbcType=VARCHAR},
+		#{pw,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR},
+		#{birth,jdbcType=DATE}, #{tel,jdbcType=VARCHAR},
+		#{photo,jdbcType=VARCHAR},
+		#{gradeNo,jdbcType=INTEGER},
+		#{nickName,jdbcType=VARCHAR}, #{gender,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<insert id="insertBusiness"
+		parameterType="com.bangkok.member.vo.BusinessVO">
+		INSERT INTO businessUser (
+		BUSINESS_NO, email,
+		office_adr, office_num, detail_adr, office_name, post_code
+		) VALUES (
+		bis_seq.nextval, #{email}, #{office_adr}, #{office_num},
+		#{detail_adr},
+		#{office_name}, #{post_code}
+		)
+	</insert>
+
+	<!-- 회원 관리 글 보기 -->
+	<select id="view" parameterType="string"
+		resultType="com.bangkok.member.vo.MemberVO">
+		SELECT email, name, nickName, photo, gender, regDate, tel,
+		birth
+		FROM member
+		WHERE email = #{email}
+	</select>
+
+	<!-- 사업자 정보 보기 -->
+	<select id="bisView" parameterType="string"
+		resultType="com.bangkok.member.vo.BusinessVO">
+		SELECT business_no, email, detail_adr, office_adr,
+		office_name, office_num,
+		post_code
+		FROM businessUser
+		WHERE email =
+		#{email}
+	</select>
+
+	<update id="update">
+		UPDATE member
+		SET name = #{name}, nickName =
+		#{nickName}, photo = #{photo,jdbcType=VARCHAR}, tel =
+		#{tel}, birth =
+		#{birth}
+		WHERE
+		email = #{email}
+	</update>
+
+	<update id="bisUpdate">
+		UPDATE businessUser
+		SET post_code = #{post_code},
+		office_adr = #{office_adr}, detail_adr =
+		#{detail_adr},
+		office_name =
+		#{office_name}, office_num = #{office_num}
+		WHERE email = #{email}
+	</update>
+
+	<update id="createPasswordResetTokenForUser" parameterType="map">
+    <![CDATA[
+    UPDATE member
+    SET reset_token = #{reset_token}, reset_token_expiry = SYSDATE + INTERVAL '1' DAY
+    WHERE email = #{email}
+    ]]>
+	</update>
+
+	<!-- 비밀번호 재설정 토큰 생성 -->
+	<update id="updatePasswordResetToken"
+		parameterType="com.bangkok.member.vo.MemberVO">
+		 <![CDATA[
+		UPDATE member
+		SET reset_token = #{reset_token},
+		reset_token_expiry = #{reset_token_expiry}
+		WHERE email = #{email}
+		    ]]>
+	</update>
+
+	<!-- 사용자 정보 조회 -->
+	<select id="findMemberByNameEmailTel" parameterType="map"
+		resultType="com.bangkok.member.vo.MemberVO">
+		SELECT *
+		FROM member
+		WHERE name = #{name}
+		AND email = #{email}
+		AND tel = #{tel}
+	</select>
+
+	<!-- 비밀번호 재설정 -->
+	<update id="updatePassword" parameterType="map">
+    <![CDATA[
+    UPDATE member
+    SET pw = #{pw}
+    WHERE email = #{email}
+    AND reset_token = #{reset_token}
+    AND reset_token_expiry >= SYSDATE
+    ]]>
+	</update>
+
+	<!-- 토큰 유효성 확인 -->
+	<select id="validatePasswordResetToken" parameterType="string"
+		resultType="int">
+       <![CDATA[
+        SELECT COUNT(*)
+        FROM member
+        WHERE reset_token = #{reset_token}
+        AND reset_token_expiry > SYSDATE
+          ]]>
+	</select>
+
+	<!-- 비밀번호 찾기: 사용자 정보 조회 -->
+	<select id="findPassword" parameterType="map"
+		resultType="com.bangkok.member.vo.MemberVO">
+		SELECT *
+		FROM member
+		WHERE name = #{name}
+		AND email = #{email}
+		AND tel = #{tel}
+	</select>
+	<!-- findByResetToken 메서드에 대한 SQL 매핑 -->
+	<select id="findByResetToken" parameterType="String"
+		resultType="com.bangkok.member.vo.MemberVO">
+ <![CDATA[
+    SELECT * FROM member WHERE reset_token = #{token} AND reset_token_expiry >= SYSDATE
+     ]]>
+	</select>
+	<select id="findMemberByResetToken" parameterType="string"
+		resultType="com.bangkok.member.vo.MemberVO">
+    <![CDATA[
+    SELECT * 
+    FROM member 
+    WHERE reset_token = #{reset_token}
+    AND reset_token_expiry >= SYSDATE
+    ]]>
+	</select>
+
+	<select id="findEmail" resultType="String">
+		SELECT email
+		FROM member
+		WHERE
+		name = #{name, jdbcType=VARCHAR}
+		AND tel = #{tel, jdbcType=VARCHAR}
+	</select>
+
+
+	<update id="changeConDate" parameterType="string">
+		UPDATE member
+		SET
+		conDate = SYSDATE
+		WHERE email = #{email}
+	</update>
+
+	<update id="delete">
+		UPDATE member
+		SET status = #{status}
+		WHERE email =
+		#{email}
+	</update>
+
+	<select id="getMemberInfo" parameterType="string"
+		resultType="com.bangkok.member.vo.MemberVO">
+		SELECT *
+		FROM member
+		WHERE email = #{email}
+	</select>
+
+	<select id="login" parameterType="com.bangkok.member.vo.LoginVO"
+		resultType="com.bangkok.member.vo.LoginVO">
+		SELECT m.email, m.pw, m.name, m.photo, m.gradeNo,
+		g.gradeName, m.nickName,
+		m.status
+		FROM member m
+		JOIN grade g ON m.gradeNo
+		= g.gradeNo
+		WHERE m.email = #{email} AND m.pw = #{pw}
+	</select>
+
+	<update id="updateStatus">
+		UPDATE member
+		SET status = #{status}
+		WHERE email = #{email}
+	</update>
+
+	<update id="updateGrade">
+		UPDATE member
+		SET gradeNo = #{gradeNo}
+		WHERE email = #{email}
+	</update>
+	
+	  <!-- 이메일로 회원 검색 -->
+    <select id="findByEmail" parameterType="String" resultType="com.bangkok.member.vo.MemberVO">
+        SELECT * FROM member
+        WHERE email = #{email}
+    </select>
+
+    <!-- 회원 저장 -->
+    <insert id="saveGoogleMember" parameterType="com.bangkok.member.vo.MemberVO">
+        INSERT INTO member (email, name, pw, birth,tel,gradeNo,nickName,gender)
+        VALUES (#{email}, #{name}, 'test1!', '1990-10-29','010-1111-1111',1,'nickName','여자')
+    </insert>
+
+</mapper>

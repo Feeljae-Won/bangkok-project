@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.airReservation.mapper.AirReservationMapper">
+
+	<select id="list"
+		resultType="com.bangkok.airReservation.vo.AirReservationVO">
+		select
+		ar.reservationNo, ar.email, ar.reservationLabel, ar.status,
+		a.flightname, ar.total_Price, r.type, 
+		LISTAGG(s.seatID, ', ') WITHIN GROUP (ORDER BY s.seatID) AS seatIDs,
+		ac.seatClass,
+		ar.booking_Date, a.departureTime, a.arrivalTime, a.duration, r.departure, r.arrival,
+		 
+		 
+				(SELECT COUNT(*) FROM adult_passenger ap WHERE ap.reservationNo = ar.reservationNo) +
+		        (SELECT COUNT(*) FROM child_passenger cp WHERE cp.reservationNo = ar.reservationNo) +
+		        (SELECT COUNT(*) FROM infant_passenger ip WHERE ip.reservationNo = ar.reservationNo) 
+		        AS passenger_cnt
+		 
+
+
+		from airplane_reservation ar, airSchedule a, airroute r, member m, seat s,
+		airseatclass ac, reservation_schedule rsd
+		
+
+		group by
+		ar.reservationNo,
+		ar.reservationLabel,
+		ar.email,
+		a.flightname,
+		rsd.scheduleID,
+		ar.total_Price,
+		r.type,
+		ac.seatClass,
+		ar.booking_Date,
+		ar.status,
+		a.departureTime,
+		a.arrivalTime,
+		a.duration,
+		r.departure,
+		r.arrival
+
+	</select>
+
+	<insert id="reservation">
+		<selectKey keyProperty="reservationNo" resultType="Long"
+			order="BEFORE">
+			SELECT airplane_Reservation_seq.NEXTVAL FROM dual
+		</selectKey>
+
+		INSERT INTO airplane_reservation (
+		reservationNo,
+		reservationLabel,
+		email,
+		booking_date,
+		total_price,
+		aPassenger,
+		cPassenger,
+		iPassenger
+		)
+		VALUES (
+		#{reservationNo},
+		#{reservationLabel},
+		#{email},
+		SYSDATE,
+		#{total_Price},
+		#{aPassenger},
+		#{cPassenger, jdbcType=INTEGER},
+		#{iPassenger}
+		)
+	</insert>
+
+
+
+	<insert id="reservationSchedule">
+		insert into reservation_schedule(reservationScheduleNo, reservationNo,
+		scheduleID)
+		select reservation_schedule_seq.nextval, #{reservationNo}, scheduleId
+		from (
+		<foreach collection="scheduleID" item="scheduleId"
+			separator=" UNION ALL ">
+			select #{reservationNo} as reservationNo, #{scheduleId} as scheduleId from
+			dual
+		</foreach>
+		)
+	</insert>
+
+
+	<insert id="reservationAPassenger" parameterType="java.util.List">
+	    INSERT INTO adult_passenger (
+	        adultPassengerNo, reservationNo, first_name, last_name, birth, nationality, passport_number,
+	        passport_endDate, gender, adultCount
+	    )
+	    SELECT 
+	        adult_passenger_seq.nextval, 
+	        reservationNo,
+	        first_name, 
+	        last_name,
+	        birth,
+	        nationality,
+	        passport_number, 
+	        passport_endDate,
+	        gender,
+	        adultCount
+	    FROM (
+	        <foreach collection="list" item="vo" separator=" UNION ALL ">
+	            SELECT #{vo.reservationNo} AS reservationNo, 
+	                #{vo.firstName} AS first_name, 
+	                #{vo.lastName} AS last_name, 
+	                #{vo.birth} AS birth, 
+	                #{vo.nationality} AS nationality,
+	                #{vo.passport_number} AS passport_number, 
+	                #{vo.passportEndDate} AS passport_endDate,
+	                #{vo.gender} AS gender,
+	                #{vo.adultCount} AS adultCount
+	            FROM dual
+	        </foreach>
+	    )
+	</insert>
+	
+	<insert id="reservationCPassenger" parameterType="java.util.List">
+	    INSERT INTO child_passenger (
+	        childPassengerNo, reservationNo, first_name, last_name, birth, nationality, passport_number,
+	        passport_endDate, gender, childCount
+	    )
+	    SELECT 
+	        child_passenger_seq.nextval, 
+	        reservationNo,
+	        first_name, 
+	        last_name,
+	        birth,
+	        nationality,
+	        passport_number, 
+	        passport_endDate,
+	        gender,
+	        childCount
+	    FROM (
+	        <foreach collection="list" item="vo" separator=" UNION ALL ">
+	            SELECT #{vo.reservationNo} AS reservationNo, 
+	                #{vo.firstName} AS first_name, 
+	                #{vo.lastName} AS last_name, 
+	                #{vo.birth} AS birth, 
+	                #{vo.nationality} AS nationality,
+	                #{vo.passport_number} AS passport_number, 
+	                #{vo.passportEndDate} AS passport_endDate,
+	                #{vo.gender} AS gender,
+	                #{vo.childCount} AS childCount
+	            FROM dual
+	        </foreach>
+	    )
+	</insert>
+	
+	<insert id="reservationIPassenger" parameterType="java.util.List">
+    INSERT INTO infant_passenger (
+        infantPassengerNo, reservationNo, first_name, last_name, birth, nationality, passport_number,
+        passport_endDate, gender, infantCount
+    )
+    SELECT 
+        infant_passenger_seq.nextval, 
+        reservationNo,
+        first_name, 
+        last_name,
+        birth,
+        nationality,
+        passport_number, 
+        passport_endDate,
+        gender,
+        infantCount
+    FROM (
+        <if test="list != null and list.size() > 0">
+            <foreach collection="list" item="vo" separator=" UNION ALL ">
+                SELECT  
+                #{vo.reservationNo, jdbcType=INTEGER} AS reservationNo, 
+                #{vo.firstName, jdbcType=VARCHAR} AS first_name, 
+                #{vo.lastName, jdbcType=VARCHAR} AS last_name, 
+                #{vo.birth, jdbcType=DATE} AS birth, 
+                #{vo.nationality, jdbcType=VARCHAR} AS nationality,
+                #{vo.passport_number, jdbcType=VARCHAR} AS passport_number, 
+                #{vo.passportEndDate, jdbcType=DATE} AS passport_endDate,
+                #{vo.gender, jdbcType=VARCHAR} AS gender,
+                #{vo.infantCount, jdbcType=INTEGER} AS infantCount
+                FROM dual
+            </foreach>
+        </if>
+    )
+</insert>
+
+
+
+	<insert id="reservationBaggage" parameterType="java.util.List">
+		INSERT INTO baggage (baggageNo, reservationNo, baggageTypeID)
+
+		SELECT baggage_seq.nextval, reservationNo,
+		baggageTypeID
+		FROM (
+		<foreach collection="list" item="vo" separator=" union all ">
+			SELECT #{vo.reservationNo} as reservationNo,
+			#{vo.baggageTypeID} as baggageTypeID
+
+			from dual
+		</foreach>
+		)
+	</insert>
+
+	<update id="reservationState">
+		UPDATE airplane_reservation
+		SET status = '완료됨'
+		WHERE reservationNo = #{reservationNo} and email = #{email}
+	</update>
+
+	<!-- 예약 취소 -->
+
+	<update id="reservationDelete" parameterType="java.lang.Long">
+		update
+		airplane_reservation set state = '취소됨'
+		WHERE reservationNo = #{reservationNo} and email = #{email}
+	</update>
+
+
+	<!-- AJAX -->
+	<select id="selectCountry"
+		resultType="com.bangkok.airReservation.vo.CountryVO">
+		select countryCode, countryEng
+		from country
+		order by countryEng desc
+	</select>
+
+	<select id="selectBaggage"
+		resultType="com.bangkok.airReservation.vo.BaggageTypeVO">
+		select bt.baggageTypeID, bt.baggage_Type, bt.description, be.exampleName,
+		be.example_description,
+		bt.maxweight, bt.price
+		from baggage_Type bt, baggage_type_examples be
+		where bt.baggageTypeID = be.baggageTypeID
+		order by bt.baggage_Type desc
+	</select>
+
+
+	<!-- 여기서 부터는 좌석 -->
+
+	<select id="seatList"
+		resultType="com.bangkok.airReservation.vo.SeatVO">
+		select
+		seatNo,
+		seatID,
+		seatRow,
+		seatCol,
+		classNo,
+		passengerNo
+		from
+		Seats
+		where
+		scheduleID = #{scheduleID};
+
+	</select>
+
+	<insert id="seatwrite">
+		insert into Seats (seatNo, flightName, seatID, seatRow, seatCol, classNo,
+		passengerNo)
+		values ( #{seatNo}, #{flightName}, #{seatID}, #{seatRow}, #{seatCol},
+		#{classNo}, #{passengerNo})
+	</insert>
+
+
+	<update id="updatePassengerNoForSeats">
+		<foreach item="seat" collection="seats" separator=";">
+			UPDATE Seats
+			SET passengerNo = #{seat.passengerNo}
+			WHERE seatNo = #{seat.seatNo}
+		</foreach>
+	</update>
+
+	<update id="updateNullForSeats">
+		<foreach item="seat" collection="seats" separator=";">
+			UPDATE Seats
+			SET passengerNo = null
+			WHERE seatNo = #{seat.seatNo}
+		</foreach>
+	</update>
+
+	<update id="minusSeat">
+		UPDATE SeatCnt sc
+		SET sc.cnt = sc.cnt -
+		(SELECT COUNT(*)
+		FROM passenger p
+		JOIN airplane_reservation ar ON p.reservationNo = ar.reservationNo
+		WHERE ar.scheduleID = sc.scheduleID
+		AND p.classNo = sc.classNo)
+		WHERE EXISTS
+		(SELECT 1
+		FROM passenger p
+		JOIN airplane_reservation ar ON p.reservationNo = ar.reservationNo
+		WHERE ar.scheduleID = sc.scheduleID
+		AND p.classNo = sc.classNo);
+	</update>
+
+
+	<update id="plusSeat">
+		UPDATE SeatCnt sc
+		SET sc.cnt = sc.cnt +
+		(SELECT COUNT(*)
+		FROM passenger p
+		JOIN airplane_reservation ar ON p.reservationNo = ar.reservationNo
+		WHERE ar.scheduleID = sc.scheduleID
+		AND p.classNo = sc.classNo)
+		WHERE EXISTS
+		(SELECT 1
+		FROM passenger p
+		JOIN airplane_reservation ar ON p.reservationNo = ar.reservationNo
+		WHERE ar.scheduleID = sc.scheduleID
+		AND p.classNo = sc.classNo);
+	</update>
+
+	<!-- 모든 예약 조회 -->
+	
+	<select id="listAllReservations"
+	        resultType="com.bangkok.airReservation.vo.AirReservationVO">
+	    SELECT
+	        ar.reservationNo,
+	        ar.email,
+	        ar.reservationLabel,
+	        a.flightname,
+	        rsd.scheduleID,
+	        ar.total_Price,
+	        r.type,
+	        LISTAGG(s.seatID, ', ') WITHIN GROUP (ORDER BY s.seatID) AS seatIDs,
+	        ac.seatClass,
+	        ar.booking_Date,
+	        ar.status,
+	        a.departureTime,
+	        a.arrivalTime,
+	        a.duration,
+	        r.departure,
+	        r.arrival,
+	        COUNT(p.passengerNo) AS passenger_cnt
+	    FROM airplane_reservation ar
+	    JOIN reservation_schedule rsd ON ar.reservationNo = rsd.reservationNo
+	    JOIN airSchedule a ON rsd.scheduleID = a.scheduleID
+	    JOIN airroute r ON a.routeID = r.routeID
+	    JOIN seat s ON rsd.scheduleID = s.scheduleID
+	    JOIN airseatclass ac ON s.classNo = ac.classNo
+	    LEFT JOIN passenger p ON p.reservationNo = ar.reservationNo
+	    GROUP BY
+	        ar.reservationNo,
+	        ar.reservationLabel,
+	        ar.email,
+	        a.flightname,
+	        rsd.scheduleID,
+	        ar.total_Price,
+	        r.type,
+	        ac.seatClass,
+	        ar.booking_Date,
+	        ar.status,
+	        a.departureTime,
+	        a.arrivalTime,
+	        a.duration,
+	        r.departure,
+	        r.arrival
+	</select>
+	
+
+	<!-- 예약 상태 업데이트 -->
+	<update id="updateReservationStatus">
+		UPDATE airplane_reservation
+		SET status = #{status}
+		WHERE reservationNo = #{reservationNo}
+	</update>
+
+
+	<!-- 승객 삭제 -->
+	<delete id="deletePassenger">
+		DELETE FROM passenger
+		WHERE passengerNo = #{passengerNo}
+	</delete>
+
+
+</mapper>

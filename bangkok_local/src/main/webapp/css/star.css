@@ -1,0 +1,30 @@
+@charset "UTF-8";
+
+
+.rating-section {
+  margin: 20px 0;
+}
+.rating-section div {
+  margin-bottom: 10px;
+}
+.stars {
+  display: flex;
+  justify-content: center;
+}
+.stars i {
+  margin-right: 5px;
+  font-size: 30px; /* 적절한 크기로 조정 */
+  background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+.review-section {
+  text-align: center;
+}
+.review-section h6 {
+  font-weight: bold;
+  margin-top: 15px;
+}
+.review-section div {
+  padding: 10px 0;
+}

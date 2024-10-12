@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bangkok.category.mapper.CategoryMapper">
+   
+   <!-- Category List -->
+   <select id="list" resultType="com.bangkok.category.vo.CategoryVO">
+      select cate_code1, cate_name
+      from tripInfocategory
+      where 1 = 1  <!-- 기본 조건: 항상 참 -->
+      
+      <!-- 특정 카테고리 (cate_code1이 0이 아닌 경우) -->
+      <if test="cate_code1 != null and cate_code1 != 0"> 
+         and cate_code1 = #{cate_code1}
+      </if>
+
+      order by cate_code1
+   </select>
+   
+   <!-- Big Category List (대분류 리스트만 가져오기) -->
+   <select id="getBigList" resultType="com.bangkok.category.vo.CategoryVO">
+      SELECT cate_code1, cate_name
+      FROM tripInfocategory
+<!--       WHERE cate_code2 = 0  대분류만 가져옴 -->
+      ORDER BY cate_code1
+   </select>
+
+</mapper>

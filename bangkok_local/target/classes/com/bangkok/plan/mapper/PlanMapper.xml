@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.plan.mapper.PlanMapper">
+
+<!-- list -->
+<!-- 권한 처리 로그인 시 아이디와 여행 작성 아이디가 같은 항목 출력 -->
+<select id="list" resultType="com.bangkok.plan.vo.PlanVO">
+	select t.tno, t.tripThema, t.tripStartDate, 
+	    t.tripEndDate, ct.cityName, c.countryKor
+	from tripPlan t, city ct, country c
+	where t.cityNum = ct.cityNum and ct.countryCode = c.countryCode
+		and t.email = 'test1@naver.com'
+	order by tno desc
+</select>
+
+<!-- 2-1. view -->
+<select id="view" resultType="com.bangkok.plan.vo.PlanVO">
+	select t.tno, t.tripThema, t.tripComment, t.tripStartDate, 
+	    t.tripEndDate, ct.cityNum, ct.cityName, c.countryKor
+	from tripPlan t, city ct, country c
+	where tno = #{tno}
+		and t.cityNum = ct.cityNum 
+		and ct.countryCode = c.countryCode
+</select>
+
+<!-- 2-2. planList -->
+<select id="planList" resultType="com.bangkok.planDetail.vo.PlanDetailVO">
+	select p.pno,  p.tno, p.tripDate, p.no, p.tripTime, p.planComment, 
+    	ti.place, ti.imageFile, tc.cate_name
+	from planDetail p, tripPlan t, tripInfo ti, tripInfoCategory tc
+	where p.tno = #{tno} 
+		and p.tno = t.tno 
+		and p.no = ti.no 
+		and ti.cate_code1 = tc.cate_code1
+	    and p.tripDate between t.tripStartDate and t.tripEndDate
+	order by p.tripDate, p.pno
+</select>
+
+<!-- 2-3. planView -->
+<select id="planView" resultType="com.bangkok.planDetail.vo.PlanDetailVO">
+	select p.pno, p.tripDate, p.no, p.tripTime, p.planComment, 
+	    ti.place, ti.imageFile, tc.cate_name
+	from planDetail p, tripPlan t, tripInfo ti, tripInfoCategory tc
+	where p.pno = #{pno} 
+		and p.no = ti.no 
+		and ti.cate_code1 = tc.cate_code1
+	    and p.tripDate between t.tripStartDate and t.tripEndDate
+	order by p.tripDate, p.pno
+</select>
+
+<!-- 기간 write -->
+<insert id="write">
+	<selectKey keyProperty="tno" resultType="Long" order="BEFORE">
+		select trip_seq.nextval from dual
+	</selectKey>
+	<!-- 달력 해결하기 -->
+	<!-- cityNum Ajax 로 로드하기 -->
+	insert into tripPlan(tno, tripThema, 
+		<if test="tripComment != null and tripComment != ''">
+			tripComment,
+		</if>
+		tripStartDate, tripEndDate, cityNum, email)
+	values (#{tno}, #{tripThema}, 
+		<if test="tripComment != null and tripComment != ''">
+			#{tripComment}, 
+		</if>
+		'2024-12-25', '2024-12-30', #{cityNum}, 'test@naver.com')
+</insert>
+<!-- 기간별 날짜 write -->
+<insert id="dateWrite">
+	<selectKey keyProperty="pno" resultType="Long" order="BEFORE">
+		select plan_seq.nextval from dual
+	</selectKey>
+	<!-- 달력 해결하기 -->
+	<!-- cityNum Ajax 로 로드하기 -->
+	insert into tripPlan(tno, tripThema, 
+		<if test="tripComment != null and tripComment != ''">
+			tripComment,
+		</if>
+		tripStartDate, tripEndDate, cityNum, email)
+	values (#{tno}, #{tripThema}, 
+		<if test="tripComment != null and tripComment != ''">
+			#{tripComment}, 
+		</if>
+		'2024-12-25', '2024-12-30', 5, 'admin@daum.net')
+</insert>
+
+<!-- update -->
+<update id="update">
+	<!-- 달력 해결하기 -->
+	<![CDATA[
+		update tripPlan 
+		set tripStartDate = '2025-01-01', tripEndDate = '2025-01-05', 
+			tripThema = #{tripThema}, tripComment = #{tripComment}, cityNum = #{cityNum}
+		where tno = #{tno}
+	]]>
+</update>
+
+<!-- delete -->
+<delete id="delete">
+	delete from tripPlan where tno = #{tno}
+</delete>
+
+</mapper>

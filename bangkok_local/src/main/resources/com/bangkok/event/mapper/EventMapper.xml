@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.event.mapper.EventMapper">
+	<!-- 이벤트  리스트 -->
+	<select id="list" resultType="com.bangkok.event.vo.EventVO">
+		select eventNo, title, image, startDay, endDay, sub_image
+		from (
+			select rownum rnum,eventNo, title, image, startDay, endDay, sub_image
+			from (
+				select
+				eventNo,image,title,startDay, endDay, sub_image
+				from
+				event
+			   where trunc(sysdate) &gt;= trunc(startday)
+				and trunc(sysdate) &lt;= trunc(endDay) 
+				order by eventNo desc
+			)
+		)
+		where rnum between #{startRow} and #{endRow}
+	</select>
+	<select id="listEvent" resultType="com.bangkok.event.vo.EventVO">
+				select
+				eventNo,image,title,startDay, endDay, sub_image
+				from
+				event
+			   where trunc(sysdate) &gt;= trunc(startday)
+				and trunc(sysdate) &lt;= trunc(endDay) 
+				order by eventNo desc
+	</select>
+<!-- 호텔 리스트 처리  -->
+	<select id="hotelList" resultType="com.bangkok.event.vo.EventVO">
+				select
+				eventNo,image,title,startDay, endDay,sub_image
+				from
+				event
+			   where trunc(sysdate) &gt;= trunc(startday)
+				and trunc(sysdate) &lt;= trunc(endDay) 
+				and categoryName = 'Hotel'
+				order by eventNo desc
+	</select>
+<!-- 여행 리스트 처리  -->
+	<select id="tripList" resultType="com.bangkok.event.vo.EventVO">
+				select
+				eventNo,image,title,startDay, endDay,sub_image
+				from
+					event
+			   where trunc(sysdate) &gt;= trunc(startday)
+				and trunc(sysdate) &lt;= trunc(endDay) 
+				and categoryName = 'Trip'
+				order by eventNo desc
+	</select>
+
+	<!-- 이벤트  리스트 페이지 처리를 위한 전체 데이터 개수 가져오기 -->
+	<select id="getTotalRow" resultType="Long">
+		select count(*)
+		from event
+	</select>
+	
+
+	<!-- 이벤트  글보기 -->
+	<select id="view" resultType="com.bangkok.event.vo.EventVO">
+		select eventNo, title, image,startDay, endDay
+		from event
+		where eventNo = #{eventNo}
+	</select>
+
+	<!-- 이벤트  글등록 -->
+	<!-- 
+	<insert id="write">
+		insert into event(no, title, content, writer, pw)
+		values(event_seq.nextval, #{title}, #{content}, #{writer}, #{pw})
+	</insert>
+	-->
+	<insert id="write">
+		<!-- 먼저 EventVO의 no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다. -->
+		<selectKey keyProperty="eventNo" resultType="Long" order="BEFORE">
+			select eventNo_seq.nextval from dual
+		</selectKey>
+			insert into event(eventNo,image,title,startDay,endDay,sub_image)
+			values(#{eventNo},#{image},#{title},#{startDay},#{endDay},#{sub_image})
+	</insert>
+
+	<!-- 이벤트  글수정 -->
+	<update id="update">
+		update event
+		set title = #{title}, image = #{image},sub_image = #{sub_image}, startDay = #{startDay}, endDay = #{endDay}
+		where eventNo = ${eventNo}  
+	</update>
+
+	<!-- 이벤트  글수정 -->
+	<delete id="delete">
+	<![CDATA[
+		delete from event
+		where eventNo = ${eventNo}
+	]]>
+	</delete>
+
+</mapper>

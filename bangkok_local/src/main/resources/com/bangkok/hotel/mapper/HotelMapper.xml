@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.hotel.mapper.HotelMapper">
+
+	<select id="list" resultType="com.bangkok.hotel.vo.HotelVO">
+		select no, title, rating,
+		price,
+		address, image_name
+		from (
+		select rownum rnum, no, title, rating,
+		price,
+		address, image_name
+		from (
+		SELECT h.no, h.title, h.rating, hr.price,
+		h.address, h.image_name
+		FROM hotel h, hotel_room hr
+		where price in
+		(select min(price) from hotel_room where no = h.no)
+		and
+		( h.no = hr.no)
+		)
+		)
+		where rnum between #{pageObject.startRow} and #{pageObject.endRow}
+	</select>
+
+	<!-- rno를 가져오는 쿼리 -->
+	<select id="getRno" resultType="Long">
+		SELECT rno
+		FROM hotel_room
+		WHERE no
+		= #{no}
+	</select>
+
+	<!-- 상품 리스트 페이지 처리를 위한 전체 데이터 개수 가져오기 -->
+	<select id="getTotalRow" resultType="Long">
+		select count(*)
+		from hotel h, hotel_room hr
+		<!-- 검색을 달아야한다. -->
+		where (1=1)
+		and
+		h.no = hr.no
+	</select>
+
+	<!-- 상품 보기 조회수 1 증가 -->
+	<!-- # {obj} 1. 변수의 이름, 2. vo의 getter 이름, 3. Map의 key -->
+	<update id="increase">
+		update hotel set hit = hit + 1
+		where no = #{no}
+	</update>
+
+	<!-- 호텔 정보 보기 -->
+	<select id="view" resultType="com.bangkok.hotel.vo.HotelVO">
+		select
+		no, title, rating, content,
+		tel, notice, address, accommodations,
+		image_name, detail_image_name,
+		hit
+		from
+		hotel
+		where no = #{no}
+	</select>
+
+	<!-- 편의시설 리스트 -->
+	<select id="amenitiesList"
+		resultType="com.bangkok.hotel.vo.HotelVO">
+		select h.no, ha.amenitiesNo, a.amenitiesName
+		from hotel h,
+		hotel_amenities ha, amenities a
+		where h.no = #{no}
+		and (
+		h.no = ha.no
+		)
+		and (
+		ha.amenitiesNo = a.amenitiesNo)
+	</select>
+
+	<!-- 호텔 이미지 리스트 -->
+	<select id="hotelImageList"
+		resultType="com.bangkok.hotel.vo.HotelImageVO">
+		select
+		hotel_image_no, no, hotel_image_name
+		from hotel_image
+		where (no = #{no})
+	</select>
+
+	<!-- 객실 이미지 리스트 -->
+	<select id="roomImageList"
+		resultType="com.bangkok.hotel.vo.RoomImageVO">
+		select ri.room_image_no, ri.rno, ri.room_image_name
+		from hotel_room hr, room_image ri
+		where hr.rno = #{rno} 
+		and (hr.rno = ri.rno)
+	</select>
+
+	<!-- 객실 리스트 -->
+	<select id="hotelRoomList"
+		resultType="com.bangkok.hotel.vo.HotelRoomVO">
+		select
+		hr.rno, h.no, hr.room_title, hr.room_type, hr.people,
+		hr.price,
+		hr.room_number,
+		hr.room_content, hr.room_image_name
+		from
+		hotel_room hr, hotel h
+		where h.no = #{no}
+		and (hr.no = h.no)
+		order by
+		price asc
+	</select>
+
+	<!-- 호텔 등록 -->
+	<insert id="write">
+		<selectKey keyProperty="no" resultType="Integer"
+			order="BEFORE">
+			select hotel_seq.nextval from dual
+		</selectKey>
+		INSERT INTO hotel(no, title, rating, content, tel,
+		notice, address,
+		accommodations, image_name, detail_image_name)
+		VALUES (#{no}, #{title},
+		#{rating}, #{content},
+		#{tel}, #{notice,jdbcType=VARCHAR},
+		#{address,jdbcType=VARCHAR},
+		#{accommodations,jdbcType=VARCHAR},
+		#{image_name,jdbcType=VARCHAR},
+		#{detail_image_name,jdbcType=VARCHAR})
+	</insert>
+
+
+	<!-- 2. 호텔 추가 이미지 등록 -->
+	<insert id="writeHotelImage" parameterType="java.util.List">
+		<!-- 먼저 GoodsVO의 goods_no를 가져와서 세팅해 준다. -->
+		INSERT INTO hotel_image(hotel_image_no, no, hotel_image_name)
+		select
+		hotel_image_seq.nextval, no, hotel_image_name from (
+		<foreach collection="list" item="vo" separator=" union all ">
+			select #{vo.no}
+			no, #{vo.hotel_image_name} hotel_image_name
+			from dual
+		</foreach>
+		)
+	</insert>
+
+	<!-- 2. 객실 추가 이미지 등록 -->
+	<insert id="writeRoomImage" parameterType="java.util.List">
+		<!-- 먼저 GoodsVO의 goods_no를 가져와서 세팅해 준다. -->
+		INSERT INTO room_image(room_image_no, rno, room_image_name)
+		select
+		room_image_seq.nextval, value.* from
+		(
+		<foreach collection="list" item="vo" separator=" union all">
+			<foreach collection="vo.room_image_names"
+				separator=" union all" item="rin">
+				select #{vo.rno} rno, #{rin}
+				room_image_name
+				from dual
+			</foreach>
+		</foreach>
+		) value
+	</insert>
+
+	<!-- 3. 편의시설 등록 -->
+	<insert id="writeAmenities">
+		<!-- 먼저 GoodsVO의 goods_no를 가져와서 세팅해 준다. -->
+		INSERT INTO hotel_amenities(hotel_amenities_no, no,
+		amenitiesNo)
+		select
+		hotel_amenities_seq.nextval, no, amenitiesNo from (
+		<foreach collection="list" item="vo" separator=" union all ">
+			select #{vo.no}
+			no,
+			#{vo.amenitiesNo} amenitiesNo
+			from dual
+		</foreach>
+		)
+	</insert>
+
+	<!-- 넣어야 할 객실 번호 조회 -->
+	<select id="getRnos" resultType="Long">
+		select hotel_room_seq.nextval rno from(
+		<foreach collection="list" separator=" union all ">
+			select 1 from dual
+		</foreach>
+		)
+	</select>
+
+	<!-- 4. 객실 등록 -->
+	<insert id="writeHotelRoom">
+		INSERT INTO hotel_room(rno, no, room_title, room_type, people, price,
+		room_number,
+		room_content, room_image_name)
+		(
+		<foreach collection="list" item="vo" separator=" union all ">
+			select
+			#{vo.rno} rno, #{vo.no} no, #{vo.room_title,jdbcType=VARCHAR}
+			room_title,
+			#{vo.room_type,jdbcType=VARCHAR} room_type,
+			#{vo.people,jdbcType=INTEGER} people,
+			#{vo.price,jdbcType=DECIMAL}
+			price,
+			#{vo.room_number,jdbcType=INTEGER} room_number,
+			#{vo.room_content,jdbcType=VARCHAR} room_content,
+			#{vo.room_image_name,jdbcType=VARCHAR} room_image_name
+			from dual
+		</foreach>
+		)
+	</insert>
+
+
+</mapper>

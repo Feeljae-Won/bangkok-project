@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.amenities.mapper.AmenitiesMapper">
+
+	<select id="list" resultType="com.bangkok.amenities.vo.AmenitiesVO">
+				select amenitiesNo, amenitiesName
+					from amenities
+					order by amenitiesNo
+	</select>
+	
+	<!-- 카테고리 대분류 등록 -->
+	<insert id="write">
+	    INSERT INTO amenities(amenitiesNo, amenitiesName)
+	    VALUES (amenities_seq.nextval, #{amenitiesName})
+ 	</insert>
+ 	<update id="update">
+	<![CDATA[
+		update amenities
+		set amenitiesName = #{amenitiesName}
+		where amenitiesNo = #{amenitiesNo}
+	]]>
+	</update>
+	
+	<delete id="delete">
+		delete from amenities
+		where amenitiesNo = #{amenitiesNo}
+	</delete>
+</mapper>

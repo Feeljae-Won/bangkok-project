@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.hotel_reservations.mapper.Hotel_reservationsMapper">
+	<!-- 호텔 예약 리스트 상태(예약완료,미 입실, 입실 전) -->
+<select id="list" resultType="com.bangkok.hotel_reservations.vo.Hotel_reservationsVO">
+    SELECT hr.RESERVATION_NO, hr.ROOMNUMBER, hr.ID, hr.PAYMENTSTATUS,h.title,h.ADDRESS,
+           hr.PAYMENTDATE,hr.CHECKIN,hr.CHECKOUT,ri.room_image_name,r.room_type
+    FROM hotel_reservations hr , hotel_room r , room_image ri,Hotel h
+    WHERE id = #{email} and(r.no=h.no) and(hr.ROOMNUMBER=r.rno)and(hr.ROOMNUMBER=ri.ROOM_IMAGE_NO)and paymentStatus in ('예약 완료','미 입실','입실 전')
+ </select>
+	<!-- 호텔 사업자 체크 쿼리 -->
+<select id="check" resultType="com.bangkok.hotel_reservations.vo.Hotel_reservationsVO">
+     SELECT GRADENO
+    FROM MEMBER
+    WHERE email = #{email} 
+ </select>
+ 
+	<!-- // 호텔 예약 리스트 상태(취소,입실 완료) -->
+<select id="listCompletion" resultType="com.bangkok.hotel_reservations.vo.Hotel_reservationsVO">
+    SELECT hr.RESERVATION_NO, hr.ROOMNUMBER, hr.ID, hr.PAYMENTSTATUS,h.title,hr.has_review,
+           hr.PAYMENTDATE, ri.room_image_name,r.room_type
+    FROM hotel_reservations hr , hotel_room r , room_image ri,Hotel h
+    WHERE id = #{email} and(r.no=h.no) and(hr.ROOMNUMBER=r.rno)and(hr.ROOMNUMBER=ri.ROOM_IMAGE_NO)and paymentStatus in ('퇴실 완료','예약 취소')
+ </select>
+<!-- 호텔 리스트 처리  -->
+	<select id="hotel" resultType="com.bangkok.hotel_reservations.vo.Hotel_reservationsVO">
+ 	SELECT r.rno, r.PRICE, m.email, m.name, m.tel, h.title, hi.hotel_image_name,r.room_type, 
+	r.room_number, people FROM hotel_room r, Hotel h, hotel_image hi, member m 
+	where (#{rno}=r.rno)and(r.no=h.no)and(r.no=hi.hotel_image_no)and(#{email}=m.email)   
+	</select>
+
+	<!-- 호텔 예약 리스트 페이지 처리를 위한 전체 데이터 개수 가져오기 -->
+<!-- 	<select id="getTotalRow" resultType="Long"> -->
+<!-- 		select count(*) -->
+<!-- 		from event -->
+<!-- 	</select> -->
+	
+
+	<!-- 호텔 예약 글보기 -->
+	<select id="view" resultType="com.bangkok.hotel_reservations.vo.Hotel_reservationsVO">
+		select hr.RESERVATION_NO,hr.PAYMENTSTATUS,h.title,hr.PAYMENTDATE,hr.checkIn,hr.checkOut,hr.paymentMethod,hr.payment_Type,r.price,
+		ri.room_image_name,r.room_type,m.name,m.tel,hr.people,h.address
+		from hotel_reservations hr,member m,room_image ri,Hotel h,hotel_room r
+		where hr.RESERVATION_NO = #{reservation_no} and(hr.id=m.email)and(hr.roomNumber=r.rno)and(hr.roomNumber=ri.ROOM_IMAGE_NO)and(r.no=h.no)
+	</select>
+	<insert id="write">
+    <!-- 예약 정보를 삽입하기 위한 쿼리 -->
+    INSERT INTO hotel_reservations (
+        reservation_no,
+        roomNumber,
+        id,
+        paymentMethod,
+        payment_type,
+        checkIn,
+        checkOut,
+        people
+    )
+    VALUES (
+        reservations_no_seq.nextval, 
+        #{rno}, 
+        #{email}, 
+        #{paymentMethod}, 
+        #{payment_Type}, 
+        #{checkIn}, 
+        #{checkOut}, 
+        #{people}
+    )
+</insert>
+
+	<!-- 호텔 객실 수  감소 -->
+	<update id="decrease">
+		update hotel_room
+		set ROOM_NUMBER = ROOM_NUMBER -1 
+		where rno = #{rno}
+	</update>
+	<!-- 호텔 객실 수  증가 -->
+	<update id="increase">
+		update hotel_room
+		set ROOM_NUMBER = ROOM_NUMBER +1 
+		where rno =#{rno} 
+	</update>
+
+	<!-- 호텔 예약 글수정 -->
+<!-- 	<delete id="delete"> -->
+<!-- 	<![CDATA[ -->
+<!-- 		delete from event -->
+<!-- 		where eventNo = ${eventNo} -->
+<!-- 	]]> -->
+<!-- 	</delete> -->
+<!-- 	호텔 예약 상태 예약 취소  -->
+	<delete id="delete">
+		update hotel_reservations
+		set PAYMENTSTATUS ='예약 취소'
+		where RESERVATION_NO =#{reservation_no} and trunc(sysdate) &lt; trunc(CHECKIN)
+	</delete>
+
+</mapper>

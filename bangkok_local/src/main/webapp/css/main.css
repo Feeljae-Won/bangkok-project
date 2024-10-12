@@ -1,0 +1,429 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.container {
+    position: relative; /* 자식 요소들을 절대 위치로 배치할 수 있게 설정 */
+    width: 100%;
+    max-width: 1200px; /* 최대 너비 설정 */
+}
+
+.searchAir {
+    position: relative;
+    max-width: 75%; /* 최대 너비 설정 */
+    margin: 0 auto; /* 중앙 정렬 */
+    z-index: 10; /* 다른 요소들 위에 위치 */
+}
+
+.nav-tabs {
+    border-radius: 20px 20px 0 0;
+}
+
+.nav-item {
+    border-radius: 20px;
+}
+
+.nav-link {
+    border-radius: 20px 20px 0 0;
+}
+
+
+.searchAir {
+	padding: 30px 40px;
+}
+
+.type {
+	margin: 0 20px;
+	font-border: 3px;
+}
+
+.airport {
+	margin: 20px;
+	text-align: center;
+	position: relative;
+}
+
+#departureAirport, #arrivalAirport {
+	border: 2px solid rgba(255, 255, 255, 0);
+	background-color: rgba(255, 255, 255, 0);
+}
+
+#departureAirport:hover, #arrivalAirport:hover {
+	cursor: pointer;
+	border: 2px solid #E37027;
+	border-radius: 10px;
+}
+
+.material-icons:hover {
+	cursor: pointer;
+	color: #e25600 !important;
+}
+
+#airportList, #passengerSelect, #inputSchedule, .seat-info {
+	display: none;
+	background-color: white;
+	border: 1px solid #ccc;
+	border-radius: 15px;
+	padding: 20px;
+	width: 500px;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	z-index: 10;
+	text-align: left;
+}
+
+#departure, #arrival {
+	font-size: 37px;
+	font-weight: bold;
+	margin-bottom: 10px;
+}
+
+#departureKor, #arrivalKor {
+	font-size: 14px;
+	font-weight: bold;
+	margin-bottom: 10px;
+}
+
+#inputDate, #passenger, #inputSeat {
+	border-top: 1px solid rgba(255, 255, 255, 0);
+	border-left: 1px solid rgba(255, 255, 255, 0);
+	border-right: 1px solid rgba(255, 255, 255, 0);
+	border-bottom: 1px solid #444;
+	padding: 10px;
+}
+
+#inputDate, #inputSeat, #passenger {
+	cursor: pointer;
+	position: relative;
+}
+
+#inputDate:hover, #inputSeat:hover, #passenger:hover {
+	border: 1px solid #E37027 !important;
+	border-radius: 10px;
+}
+
+#searchBtn:hover {
+	cursor: pointer;
+	background-color: #e25600 !important;
+}
+
+.active {
+	color: #E37027;
+	border-bottom: 3px solid #E37027;
+	font-weight: bold;
+}
+
+.type:hover {
+	cursor: pointer;
+	color: #E37027 !important;
+}
+
+/* Datepicker UI */
+.ui-datepicker-inline {
+	width: 90%;
+	height: 400px;
+	margin: 0 auto;
+	border-radius: 10px;
+	border: 2px solid rgba(255, 255, 255, 0) !important;
+	background-color: rgba(255, 255, 255, 0) !important;
+}
+
+.ui-datepicker-title {
+	margin: 0 auto;
+	height: 50px;
+}
+
+.ui-datepicker-header {
+	background-color: #FFE3CD;
+	border-radius: 10px;
+	padding: 3px;
+	height: 60px;
+	margin-bottom: 5px;
+}
+
+.ui-icon-circle-triangle-e {
+	color: #e0e0e0;
+}
+
+.ui-datepicker-month, .ui-datepicker-year {
+	height: 80%;
+	text-align: center;
+	font-weight: bold;
+	border-radius: 10px;
+}
+
+th {
+	background-color: #FF9C2A;
+	margin-left: 2px;
+	margin-right: 2px;
+	color: #ffffff;
+	width: 30px;
+	font-weight: bold;
+}
+
+table {
+	border-radius: 10px;
+}
+
+th.ui-datepicker-week-end {
+	background-color: #FF7145;
+}
+
+td.ui-datepicker-week-end {
+	background-color: #FFF7DF;
+}
+
+td {
+	height: 57px;
+	font-weight: bold;
+}
+
+.ui-state-default {
+	height: 90%;
+	width: 90%;
+	border-radius: 5px;
+	border: 2px solid rgba(255, 255, 255, 0) !important;
+	background-color: rgba(255, 255, 255, 0) !important;
+}
+
+.ui-state-hover {
+	background-color: #FFC720 !important;
+}
+
+.ui-state-active {
+	background-color: #FF9C2A !important;
+	color: #444;
+}
+
+.ui-state-default, .ui-widget-content .ui-state-default,
+	.ui-widget-header .ui-state-default, .ui-button, html .ui-button.ui-state-disabled:hover,
+	html .ui-button.ui-state-disabled:active {
+	text-align: center;
+	font-weight: bold;
+}
+
+.flex-container {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.inputPassenger {
+	width: 60px;
+	text-align: center;
+}
+
+.cntControl {
+	font-size: 24px;
+}
+
+.fa-question-circle {
+	font-size: 24px;
+	color: #E37027;
+}
+
+.cntControl {
+	width: 35px;
+	height: 40px;
+	font-size: 20px;
+}
+
+.alert-danger {
+	display: none;
+}
+
+.inputPassenger {
+	text-align: center;
+}
+
+.seat-info {
+	display: none;
+	background-color: white;
+	border: 1px solid #ccc;
+	border-radius: 15px;
+	padding: 20px;
+	width: 370px;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	z-index: 10;
+	text-align: left;
+}
+
+#inputSeat {
+	cursor: pointer;
+	position: relative;
+}
+
+.btn {
+	border: none;
+	border-radius: 5px;
+	padding: 10px 20px;
+	cursor: pointer;
+	transition: background-color 0.3s ease;
+}
+
+/* Responsive styles */
+@media ( max-width : 768px) {
+	.overlay {
+		width: 90%;
+		top: 50%;
+		transform: translate(-50%, -50%);
+	}
+}
+
+/* 이벤트 부분 */
+.lineDiv {
+	background: #f2f2f2;
+	padding: 10px;
+	border-radius: 30px;
+	margin-bottom: 10px;
+	height: 150px;
+	width: 350px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	overflow: hidden;
+}
+
+.rounded {
+	margin-right: 20px;
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: cover;
+}
+
+.eventTitle {
+	margin: 0;
+	font-weight: bold;
+}
+
+.dateRange {
+	color: #666;
+}
+
+.dataRow {
+	display: inline-block;
+	vertical-align: top;
+	width: calc(33.333% - 30px);
+	margin-right: 20px;
+	margin-bottom: 20px;
+}
+
+.dataRow:hover {
+	cursor: pointer;
+}
+
+.no-events {
+	display: none;
+	text-align: center;
+	padding: 20px;
+	font-size: 1.2em;
+	color: #888;
+}
+
+/* 이벤트 */
+
+/* 기존 스타일 유지 */
+.lineDiv {
+	background: #f2f2f2;
+	padding: 10px;
+	border-radius: 30px;
+	margin-bottom: 10px;
+	height: 150px;
+	width: 350px;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	overflow: hidden;
+}
+
+.rounded {
+	margin-right: 20px;
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: cover;
+}
+
+.eventTitle {
+	margin: 0;
+	font-weight: bold;
+}
+
+.dateRange {
+	color: #666;
+}
+
+.dataRow {
+	display: inline-block;
+	vertical-align: top;
+	width: calc(33.333% - 30px);
+	margin-right: 20px;
+	margin-bottom: 20px;
+}
+
+.dataRow:hover {
+	cursor: pointer;
+}
+
+.editDiv {
+	display: none;
+}
+
+.no-events {
+	display: none;
+	text-align: center;
+	padding: 20px;
+	font-size: 1.2em;
+	color: #888;
+}
+
+.video-size {
+  width: 100%; /* 부모 요소에 맞게 너비 조정 */
+  height: auto; /* 비율 유지 */
+  display: block; /* 블록 요소로 설정하여 중앙 정렬 */
+}
+
+.overlay-video {
+  position: absolute; /* 비디오 위에 오버레이 배치 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* 중앙 정렬 */
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white; /* 텍스트 색상 */
+  padding: 20px;
+  text-align: center;
+  pointer-events: none; /* 클릭 이벤트 무시 */
+  width: 1150px; /* 오버레이 최대 너비 */
+  height: 642px; /* 오버레이 최대 높이 */
+  display: flex; /* Flexbox 사용 */
+  align-items: center; /* 수직 중앙 정렬 */
+  justify-content: center; /* 수평 중앙 정렬 */
+  box-sizing: border-box; /* 패딩을 포함하여 너비와 높이를 계산 */
+}
+
+.overlay-video h3 {
+  font-size: 2rem;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* 텍스트 그림자 */
+}
+
+@media (max-width: 600px) {
+  .video-size {
+    display: none; /* 화면이 600px 이하일 때 숨김 */
+  }
+  
+  .overlay-video {
+    display: none; /* 오버레이도 화면이 600px 이하일 때 숨김 */
+  }
+}
+
+.footer{
+	margin-bottom: 5%;
+	
+}

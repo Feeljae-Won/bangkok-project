@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.air.mapper.AirMapper">
+
+	<!-- id 는 메소드 이름과 같아야 한다. -->
+	<select id="searchList" resultType="com.bangkok.air.vo.AirVO">
+	    select 
+	        a.countryCode, a.airportCode, a.airportEng, a.airportKor, c.countryKor, c.countryEng, c.pan
+	    from
+	        airport a, country c
+	    where
+	        a.countryCode = c.countryCode
+	        and
+	        (
+	            a.airportCode like '%' || #{searchAirport} || '%'
+	            or a.airportKor like '%' || #{searchAirport} || '%'
+	            or a.airportEng like '%' || #{searchAirport} || '%'
+	            or c.countryKor like '%' || #{searchAirport} || '%'
+	            or c.countryEng like '%' || #{searchAirport} || '%'
+	        )
+	</select>
+	
+	<!-- 항공권 검색 결과 -->
+	<select id="searchResult" resultType="com.bangkok.air.vo.AirVO">
+		SELECT 
+		    m.photo, 
+		    al.airlineKor, 
+		    ar.departure, 
+		    dep_airport.airportKor AS departureKor, 
+		    ar.arrival, 
+		    arr_airport.airportKor AS arrivalKor, 
+		    aopt.flightName,
+		    <!-- 일 처리 -->
+		    CASE 
+		        WHEN EXTRACT(DAY FROM ash.duration) != 0 
+		        THEN EXTRACT(DAY FROM ash.duration) || '일 ' 
+		        ELSE '' 
+		    END || 
+		    <!-- 시간 처리 -->
+		    CASE 
+		        WHEN EXTRACT(HOUR FROM ash.duration) != 0 
+		        THEN EXTRACT(HOUR FROM ash.duration) || '시간 ' 
+		        ELSE '' 
+		    END || 
+		    <!-- 분 처리 -->
+		    CASE 
+		        WHEN EXTRACT(MINUTE FROM ash.duration) != 0 
+		        THEN EXTRACT(MINUTE FROM ash.duration) || '분 ' 
+		        ELSE '' 
+		    END AS duration,
+		    ash.ScheduleId, 
+		    ash.status, 
+		    TO_CHAR(ash.departureTime, 'hh24:mi') AS departureTime, 
+		    TO_CHAR(ash.arrivalTime, 'hh24:mi') AS arrivalTime, 
+		    (SELECT SUM(basePrice + tax + fuelSurCharge + bookingFee) 
+		     FROM airPrice 
+		     WHERE routeId = ar.routeId -- 각 항공사에 맞는 routeId를 사용
+		    ) AS totalPrice 
+		FROM member m
+		    JOIN airline al ON m.email = al.email
+		    JOIN airplaneOpt aopt ON al.airlineNo = aopt.airLineNo
+		    JOIN airSchedule ash ON (aopt.flightName = ash.flightName AND al.airlineNo = ash.airlineNo)
+		    JOIN airRoute ar ON ar.routeId = ash.routeID
+		    JOIN airport dep_airport ON dep_airport.airportCode = ar.departure
+		    JOIN airport arr_airport ON arr_airport.airportCode = ar.arrival
+		WHERE 
+			(
+		    ar.departure = #{departure} 
+		    AND ar.arrival = #{arrival}
+		    AND TRUNC(ash.departureTime) = #{departureTime}
+		    )
+		order by departureTime asc
+	</select>
+	
+	<!-- 대륙별 국가 리스트 -->
+	<select id="nocList" resultType="com.bangkok.air.vo.AirVO">
+		select 
+			countryCode, CountryEng, CountryKor, Pan 
+		from 
+			country 
+		where
+			pan = #{pan}
+	</select>
+	
+	<!-- 카테고리 대분류 등록 -->
+	<insert id="nocWrite">
+	    INSERT INTO country(countryCode, countryKor, countryEng, pan)
+	    VALUES(
+	    	#{countryCode}, #{countryKor}, #{countryEng}, #{pan}
+	    )
+ 	</insert>
+
+	<!-- 카테고리 수정 -->
+	<update id="update">
+	<![CDATA[
+		update country
+		set countryKor = #{countryKor}, countryEng = #{countryEng}, pan = #{pan}
+		where countryCode = #{countryCode}
+	]]>
+	</update>
+
+	<!-- 카테고리 삭제 -->
+	<delete id="delete">
+		delete from category
+		where cate_code1 = ${cate_code1}
+		<if test="cate_code2 != 0">
+			and cate_code2 = #{cate_code2}
+		</if>
+	</delete>
+	
+	<!-- 국가별 공항 리스트 가져오기 -->
+	<select id="getAirport" resultType="com.bangkok.air.vo.AirVO">
+		select a.countryCode, c.countryKor, c.countryEng, a.AirportCode, a.airportKor, a.airportEng
+		from country c, airport a
+		where a.countryCode = #{countryCode}
+		    and a.countryCode = c.countryCode
+    </select>
+    
+    <!-- 국가별 공항 리스트 가져오기 -->
+	<select id="getAirplane" resultType="com.bangkok.air.vo.AirVO">
+		select airplaneId, airplanePdt
+		from airplane
+		where airplanePdt = #{airplanePdt}
+    </select>
+    
+    <!-- 공항 등록 -->
+    <insert id="airportWrite">
+    	insert into airport(countryCode, airportCode, airportKor, airportEng)
+    	values(#{vo.countryCode}, #{vo.airportCode}, #{vo.airportKor}, #{vo.airportEng})
+    </insert>
+    
+    <!-- 공항 수정 -->
+    <update id="airportUpdate">
+    	update airport set airportKor = #{vo.airportKor}, airportEng = #{vo.airportEng}
+    	where airportCode = #{vo.airportCode}
+    </update>
+    
+    <!-- 공항 삭제 -->
+    <delete id="airportDelete">
+    	delete from airport where airportCode = #{vo.airportCode}
+    </delete>
+    
+    <!-- 항공사 기종 리스트 -->
+    <select id="flightList" resultType="com.bangkok.air.vo.AirVO">
+    	select 
+		    rnum, airplaneId, flightName, airplanePdt, seatCapacity, ecoCnt, bisCnt, fstCnt,
+		    departure, arrival, airlineNo, scheduleId, routeId
+		from (
+		    select 
+		        rownum rnum, airplaneId, flightName, airplanePdt, seatCapacity, ecoCnt, bisCnt, fstCnt,
+		        departure, arrival, airlineNo, scheduleId, routeId
+		    from (
+		        SELECT 
+				    aopt.airplaneId,
+				    aopt.flightName,
+				    MIN(ap.airplanePdt) AS airplanePdt,
+				    MIN(aopt.seatCapacity) AS seatCapacity,
+				    MIN(efsc.seatCnt) AS ecoCnt,
+				    MIN(bfsc.seatCnt) AS bisCnt,
+				    MIN(ffsc.seatCnt) AS fstCnt,
+				    MIN(ar.departure) AS departure,
+				    MIN(ar.arrival) AS arrival,
+				    MIN(aopt.airlineNo) AS airlineNo,
+				    MIN(asch.scheduleId) AS scheduleId,
+				    MIN(asch.routeId) AS routeId
+				FROM 
+				    airplaneOpt aopt
+				JOIN airplane ap ON aopt.airplaneId = ap.airplaneId
+				LEFT JOIN airschedule asch ON asch.flightName = aopt.flightName
+				LEFT JOIN airroute ar ON asch.routeId = ar.routeId
+				LEFT JOIN flightSeatCnt efsc ON efsc.flightName = aopt.flightName AND efsc.classNo = 1
+				LEFT JOIN flightSeatCnt bfsc ON bfsc.flightName = aopt.flightName AND bfsc.classNo = 2
+				LEFT JOIN flightSeatCnt ffsc ON ffsc.flightName = aopt.flightName AND ffsc.classNo = 3
+				WHERE 
+				    aopt.airlineNo = #{airlineNo}
+				GROUP BY 
+				    aopt.airplaneId,
+				    aopt.flightName
+				ORDER BY 
+				    aopt.flightName ASC
+		        )
+		    )
+		where rnum between #{pageObject.startRow} and #{pageObject.endRow}
+    </select>
+    
+    <!-- 전체 데이터 가져오기 -->
+    <select id="getTotalRow" resultType="Long">
+		select count(*) from airplaneOpt where airlineno = #{airlineNo}
+	</select>
+	
+	<!-- 항공편 상세보기 -->
+	<select id="getFlightInfo" resultType="com.bangkok.air.vo.AirVO">
+		SELECT 
+		    <!-- 항공사 정보 -->
+		    m.photo, aopt.airlineNo, al.airlineKor, al.airlineEng, al.countryCode, c.countryKor, c.countryEng, aopt.flightName, aopt.airplaneId, ap.airplanePdt, 
+		    <!-- 항공편 정보 -->
+		    aopt.seatcapacity, aopt.seatX, aopt.seatY, efsc.seatCnt ecoCnt, bfsc.seatCnt bisCnt, ffsc.seatCnt fstCnt,
+		    <!-- 경로 정보 -->
+		    asch.routeId, route.departure, dport.airportKor departureKor, route.arrival, aport.airportKor arrivalKor, route.type, route.distance, 
+		    <!-- 운항 정보 (가장 작은 scheduleId) -->
+		    MIN(asch.scheduleId) AS scheduleId, 
+		    TO_CHAR(MIN(asch.departureTime), 'hh24:mi') AS departureTime, 
+		    TO_CHAR(MIN(asch.arrivalTime), 'hh24:mi') AS arrivalTime, 
+		    <!-- 일 처리 -->
+		    CASE 
+		        WHEN EXTRACT(DAY FROM MIN(asch.duration)) != 0 
+		        THEN EXTRACT(DAY FROM MIN(asch.duration)) || '일 ' 
+		        ELSE '' 
+		    END || 
+		    <!-- 시간 처리 -->
+		    CASE 
+		        WHEN EXTRACT(HOUR FROM MIN(asch.duration)) != 0 
+		        THEN EXTRACT(HOUR FROM MIN(asch.duration)) || '시간 ' 
+		        ELSE '' 
+		    END || 
+		    <!-- 분 처리 -->
+		    CASE 
+		        WHEN EXTRACT(MINUTE FROM MIN(asch.duration)) != 0 
+		        THEN EXTRACT(MINUTE FROM MIN(asch.duration)) || '분 ' 
+		        ELSE '' 
+		    END AS duration,  
+		    asch.status
+		FROM 
+		    member m, airline al, airplane ap, airplaneOpt aopt, airport dport, airport aport, airroute route, airschedule asch, country c,
+		    flightSeatCnt efsc, flightSeatCnt bfsc, flightSeatCnt ffsc
+		WHERE 
+		    aopt.flightName = #{flightName}
+		    AND aopt.airlineNo = al.airlineNo
+		    AND al.email = m.email(+)
+		    AND al.countryCode = c.countryCode
+		    AND asch.flightName(+) = aopt.flightName
+		    AND aopt.airPlaneId = ap.airplaneId
+		    AND asch.routeId = route.routeID(+)
+		    AND route.departure = dport.airportCode(+)
+		    AND route.arrival = aport.airportCode(+)
+		    AND efsc.classNo = 1 AND efsc.flightName = aopt.flightName
+		    AND bfsc.classNo = 2 AND bfsc.flightName = aopt.flightName
+		    AND ffsc.classNo = 3 AND ffsc.flightName = aopt.flightName
+		GROUP BY 
+		    m.photo, aopt.airlineNo, al.airlineKor, al.airlineEng, al.countryCode, c.countryKor, 
+		    c.countryEng, aopt.flightName, aopt.airplaneId, ap.airplanePdt, aopt.seatcapacity, 
+		    aopt.seatX, aopt.seatY, efsc.seatCnt, bfsc.seatCnt, ffsc.seatCnt, 
+		    asch.routeId, route.departure, dport.airportKor, route.arrival, aport.airportKor, 
+		    route.type, route.distance, asch.status
+		ORDER BY 
+		    flightName ASC
+	</select>
+	
+	<!-- 전체 데이터 가져오기 -->
+    <select id="getRouteTotalRow" resultType="Long">
+		select count(*) from airRoute where airlineno = #{airlineNo}
+	</select>
+	
+	<!-- 항공기 등록 -->
+	<insert id="writeAirplane">
+		insert into airplane(airplaneId, airPlanePdt)
+		values(#{airplaneId}, #{airplanePdt})
+	</insert>
+	
+	<!-- 항공기 옵션 등록 -->
+	<insert id="writeAirplaneOpt">
+		insert into airplaneOpt(airplaneId, flightName, seatCapacity, seatX, seatY, airlineNo)
+		values(#{vo.airplaneId}, #{vo.flightName}, #{vo.seatCapacity}, #{vo.seatX}, #{vo.seatY}, #{vo.airlineNo})
+	</insert>
+	
+	<!-- 항공편 좌석 갯수 등록 -->
+	<insert id="writeFlightEcoCnt">
+		insert into flightSeatCnt(flightName, ClassNo, seatCnt)
+		values(#{vo.flightName}, 1, #{vo.ecoCnt})
+	</insert>
+	<!-- 항공편 좌석 갯수 등록 -->
+	<insert id="writeFlightBisCnt">
+		insert into flightSeatCnt(flightName, ClassNo, seatCnt)
+		values(#{vo.flightName}, 2, #{vo.bisCnt})
+	</insert>
+	<!-- 항공편 좌석 갯수 등록 -->
+	<insert id="writeFlightFstCnt">
+		insert into flightSeatCnt(flightName, ClassNo, seatCnt)
+		values(#{vo.flightName}, 3, #{vo.fstCnt})
+	</insert>
+	
+		
+	<!-- 항공 노선 리스트-->
+	<select id="routeList" resultType="com.bangkok.air.vo.AirVO">
+		 select rnum, routeId, departureCountry, departure, departureKor, departureEng,
+	          arrivalCountry, arrival, arrivalKor, arrivalEng, type, distance 
+	    from
+	        ( 
+	        select rownum rnum, routeId, departureCountry, departure, departureKor, departureEng,
+	                arrivalCountry, arrival, arrivalKor, arrivalEng, type, distance 
+	        from
+	            (
+	            select r.routeId, dc.countryKor departureCountry, r.departure, dap.airportKor departureKor, dap.airportEng departureEng, 
+	                ac.countryKor arrivalCountry, r.arrival, aap.airportKor arrivalKor, r.type, r.distance, aap.airportEng arrivalEng
+	            from
+	                airRoute r, airport dap, airport aap, country dc, country ac
+	            where
+	            	r.airlineNo = #{airlineNo}
+	            	<if test="routeId != 0">
+	            		and r.routeId = #{routeId}
+	            	</if>
+	            	and 
+		            	(
+			                r.departure = dap.airportCode
+			                and r.arrival = aap.airportCode
+			                and dap.countryCode = dc.countryCode
+			                and aap.countryCode = ac.countryCode
+		                )
+	            order by routeId asc
+	            )
+	        )
+	    where 
+	    	rnum between #{pageObject.startRow} and #{pageObject.endRow}
+	
+	</select>
+	
+	<!-- 항공 노선 상세보기-->
+	<select id="routeView" resultType="com.bangkok.air.vo.AirVO">
+           select r.routeId, dc.countryKor departureCountry, r.departure, dap.airportKor departureKor, dap.airportEng departureEng, 
+               ac.countryKor arrivalCountry, r.arrival, aap.airportKor arrivalKor, r.type, r.distance, aap.airportEng arrivalEng
+           from
+               airRoute r, airport dap, airport aap, country dc, country ac
+           where
+           	r.airlineNo = #{airlineNo}
+           	<if test="routeId != 0">
+           		and r.routeId = #{routeId}
+           	</if>
+           	and 
+            	(
+	                r.departure = dap.airportCode
+	                and r.arrival = aap.airportCode
+	                and dap.countryCode = dc.countryCode
+	                and aap.countryCode = ac.countryCode
+                )
+           order by routeId asc
+	</select>
+	
+	<!-- 노선 등록 -->
+	<insert id="routeWrite">
+		insert into airRoute(routeId, departure, arrival, type, distance, airlineNo)
+		values(airRoute_seq.nextval, #{vo.departure}, #{vo.arrival}, #{vo.type}, #{vo.distance}, #{vo.airlineNo})
+	</insert>
+	
+	<!-- 노선 왕복 등록 -->
+	<insert id="routeReturnWrite">
+		insert into airRoute(routeId, departure, arrival, type, distance, airlineNo)
+		values(airRoute_seq.nextval, #{vo.arrival}, #{vo.departure}, #{vo.type}, #{vo.distance}, #{vo.airlineNo})
+	</insert>
+	
+	<!-- 노선 수정 -->
+	<update id="routeUpdate">
+		update airroute set departure = #{vo.departure}, arrival = #{vo.arrival}, distance = #{vo.distance}
+		where routeId = #{vo.routeId}
+	</update>
+	
+	<!-- 노선 삭제 -->
+	<update id="routeDelete">
+		delete from airRoute where routeId = #{routeId}
+	</update>
+	
+	<!-- 항공 노선에 따른 금액 상세보기 -->
+	<select id="getPrice" resultType="com.bangkok.air.vo.AirVO">
+		select 
+			ap.priceId, ar.routeID, ap.basePrice, ap.tax, ap.fuelSurCharge, ap.BookingFee, ar.distance
+		from 
+			airPrice ap, airroute ar
+		where 
+			ar.airlineNo = #{airlineNo} and ar.routeID = #{routeId}
+			and ap.routeId(+) = ar.routeId
+	
+	</select>
+	
+	<!-- 노선 금액 등록 -->
+	<insert id="priceWrite">
+		insert into airPrice(priceId, routeId, basePrice, tax, fuelSurCharge, bookingFee, airLineNo)
+		values(airPrice_seq.nextval, #{vo.routeId}, #{vo.basePrice}, #{vo.tax}, #{vo.fuelSurCharge}, #{vo.bookingFee}, #{vo.airlineNo})
+	</insert>
+	
+	<!-- 노선 금액 수정 -->
+	<update id="priceUpdate">
+		update airPrice set basePrice = #{vo.basePrice}, tax = #{vo.tax}, fuelSurCharge = #{vo.fuelSurCharge}, bookingFee = #{vo.bookingFee}
+		where priceId = #{vo.priceId} and routeId = #{vo.routeId}
+	</update>
+	
+	<!-- 전체 데이터 가져오기 -->
+    <select id="getScheduleTotalRow" resultType="Long">
+		select count(*) from airSchedule where airlineno = #{airlineNo} and routeId = ${routeId}
+	</select>
+	
+	<!-- 스케줄 리스트 -->
+	<select id="airScheduleDetail" resultType="com.bangkok.air.vo.AirVO">
+		select
+			rnum, scheduleId, flightName, routeId, departure, arrival, departureTime, arrivalTime, duration, status
+		from (
+			select 
+				rownum rnum, scheduleId, flightName, routeId, departure, arrival, departureTime, arrivalTime, duration, status
+			from (
+				select 
+					asch.scheduleId, asch.flightName, asch.routeId,
+				    r.departure, r.arrival,
+				    to_char(asch.departureTime, 'yyyy-mm-dd hh24:mi') departureTime,
+				    to_char(asch.arrivalTime, 'yyyy-mm-dd hh24:mi') arrivalTime, 
+				        <!-- 일 처리 -->
+					    CASE 
+					        WHEN EXTRACT(DAY FROM asch.duration) != 0 
+					        THEN EXTRACT(DAY FROM asch.duration) || '일 ' 
+					        ELSE '' 
+					    END || 
+				        <!-- 시간 처리 -->
+					    CASE 
+					        WHEN EXTRACT(HOUR FROM asch.duration) != 0 
+					        THEN EXTRACT(HOUR FROM asch.duration) || '시간 ' 
+					        ELSE '' 
+					    END || 
+					    <!-- 분 처리 --> 
+					    CASE 
+					        WHEN EXTRACT(MINUTE FROM asch.duration) != 0 
+					        THEN EXTRACT(MINUTE FROM asch.duration) || '분 ' 
+					        ELSE '' 
+					    END AS duration, asch.status
+				from 
+					airschedule asch, airroute r
+				where (
+						asch.routeId = #{routeId} and asch.airlineNo = #{airlineNo}
+					)
+				    and asch.routeId = r.routeId
+				order by asch.departureTime desc
+			)
+		)
+		where
+			rnum between #{pageObject.startRow} and #{pageObject.endRow}
+	</select>
+	
+	<!-- 스케줄 등록 - 스케줄 없는 항공편 조회 -->
+	<select id="getFlightList" resultType="com.bangkok.air.vo.AirVO">
+		select 
+			aopt.flightName, ap.airplaneId
+		from 
+			airplaneOpt aopt, airplane ap
+		where (
+				aopt.airlineNo = #{airlineNo}
+			)
+			and (
+				ap.airplaneId = aopt.airplaneId
+			)
+		order by aopt.flightName asc
+	</select>
+	
+	<!-- 스케줄 등록 - 등록처리 -->
+	<insert id="airScheduleWrite" parameterType="com.bangkok.air.vo.ScheduleVO">
+		insert into airSchedule (scheduleId, routeId, flightName, departureTime, arrivalTime, duration, status, airlineNo)
+		values (airSchedule_seq.nextval, #{vo.routeId}, #{vo.flightName}, #{vo.departureTime}, #{vo.arrivalTime}, NUMTODSINTERVAL(#{vo.duration}, 'MINUTE'), '운항', #{vo.airlineNo})
+	</insert>
+	
+	<!-- 스케줄 삭제 처리 -->
+	<delete id="airScheduleDelete">
+		delete from airSchedule where scheduleId = #{scheduleId} and airlineNo = #{airlineNo}
+	</delete>
+	
+	<!-- 항공사 리스트 -->
+	<select id="airlineList" resultType="com.bangkok.air.vo.AirVO">
+		select
+			rnum, airlineNo, email, airlineKor, airlineEng, countryCode, countryKor, photo
+		from (
+			select 
+				rownum rnum, airlineNo, email, airlineKor, airlineEng, countryCode, countryKor, photo
+			from (
+				select 
+					a.airlineNo, a.email, a.airlineKor, a.airlineEng, a.countryCode, c.countryKor, m.photo
+				from 
+					airline a, country c, member m
+		        where 
+		            a.countryCode = c.countryCode
+		            and
+		            a.email = m.email
+		        order by airlineNo asc
+			)
+		)
+		where
+			rnum between #{pageObject.startRow} and #{pageObject.endRow}
+	</select>
+	
+	<!-- 항공사 정보 가져오기 -->
+	<select id="getAirlineInfo" resultType="com.bangkok.air.vo.AirlineVO">
+		<![CDATA[
+		select 
+		    (select count(*) from airRoute where airlineNo = #{airlineNo}) routes,
+		    (select count(*) from airPlaneOpt where airlineNo = #{airlineNo}) flights,
+		    (select count(*) from airSchedule where airlineNo = #{airlineNo} and trunc(departureTime) > trunc(sysdate)) preSchedule,
+		    (select count(*) from airSchedule where airlineNo = #{airlineNo} and trunc(arrivalTime) < trunc(sysdate)) endSchedule,
+		    (select count(*) from airSchedule where airlineNo = #{airlineNo} and trunc(arrivalTime) = trunc(sysdate)) todaySchedule,
+		    (select count(*) from airschedule where airlineNo = #{airlineNo}) allSchedule
+		from dual
+		]]>
+	</select>
+	
+	<!-- 항공사 등록 이메일 가져오기 -->
+	<select id="getEmail" resultType="com.bangkok.air.vo.AirVO">
+		SELECT 
+		    m.email, m.nickName
+		FROM 
+		    member m
+		LEFT JOIN 
+		    airline a ON m.email = a.email
+		WHERE 
+		    m.gradeNo = 5
+		    AND a.email IS NULL
+	</select>
+	
+	<!-- 항공사 등록 국가 가져오기 -->
+	<select id="getNoc" resultType="com.bangkok.air.vo.AirVO">
+		SELECT 
+		    countryCode, countryKor, countryEng, pan
+		FROM 
+		    country
+	</select>
+	
+	<!-- 항공사 등록 처리 -->
+	<insert id="airlineWrite" parameterType="com.bangkok.air.vo.AirlineVO">
+		insert into airline(airlineNo, email, airlineKor, airlineEng, countryCode)
+		values(airline_seq.nextval, #{vo.email}, #{vo.airlineKor}, #{vo.airlineEng}, #{vo.countryCode})
+	</insert>
+	
+	<!-- 항공사 수정 처리 -->
+	<update id="airlineUpdate" parameterType="com.bangkok.air.vo.AirlineVO">
+		update airline set email = #{vo.email}, airlineKor = #{vo.airlineKor}, airlineEng = #{vo.airlineEng}, countryCode = #{vo.countryCode}
+		where airlineNo = #{vo.airlineNo}
+	</update>
+	
+</mapper>

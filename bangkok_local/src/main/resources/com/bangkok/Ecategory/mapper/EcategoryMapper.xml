@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.Ecategory.mapper.EcategoryMapper">
+
+	<!-- 카테고리 리스트 -->
+	<select id="list" resultType="com.bangkok.event.vo.EcategoryVO">
+		select categoryNo,categoryName from event_types
+		order by categoryNo
+	</select>
+
+	<!-- 카테고리 대분류 등록 -->
+	<insert id="writeBig">
+			INSERT INTO event_types (categoryNo, categoryName)
+			VALUES (categoryNo_seq.NEXTVAL, #{categoryName})
+ 	</insert>
+	<!-- 카테고리 수정 -->
+	<update id="update">
+	<![CDATA[
+		update event_types
+		set categoryName = #{categoryName}
+		where categoryNo = #{categoryNo}
+	]]>
+	</update>
+
+	<!-- 카테고리 삭제 -->
+	<delete id="delete">
+		delete from event_types
+		where categoryNo = #{categoryNo}
+	</delete>
+
+</mapper>

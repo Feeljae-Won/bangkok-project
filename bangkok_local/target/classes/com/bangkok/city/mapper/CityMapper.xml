@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.city.mapper.CityMapper">
+
+<!-- 1-1. list -->
+<select id="list" resultType="com.bangkok.city.vo.CityVO">
+	select ct.cityNum, ct.cityName, ct.cityImg, c.countryKor
+	from city ct, country c
+	where
+	<include refid="citySearch" />
+	ct.countryCode = c.countryCode
+</select>
+
+<!-- 1-2. list search -->
+<sql id="citySearch">
+	<if test="word != null and word !=''.toString()">
+		(
+		<trim prefixOverrides="or">
+			<if test="key.indexOf('ct') >= 0">
+				or city like '%' || #{word} || '%'
+			</if>
+			<if test="key.indexOf('c') >= 0">
+				or country like '%' || #{word} || '%'
+			</if>
+		</trim>
+		) and
+	</if>
+</sql>
+
+</mapper>

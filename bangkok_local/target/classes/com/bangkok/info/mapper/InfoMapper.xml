@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bangkok.info.mapper.InfoMapper">
+
+    <select id="list" resultType="com.bangkok.info.vo.InfoVO">
+        select no, title, writer, cityname, Place, countrycode, writeDate, imageFile
+        from (
+            select rownum rnum, no, title, writer, cityname, Place, countrycode, writeDate, imageFile
+            from (
+                select ti.no, ti.title, ti.writer, c.cityname, ti.Place, c.countrycode, ti.writeDate,
+                       ti.imageFile
+                from tripInfo ti
+                join city c on ti.cityNum = c.cityNum
+               
+                <include refid="search"/>
+                order by ti.no asc
+            )
+        )
+        where rnum between #{startRow} and #{endRow}
+    </select>
+
+    <select id="getTripInfo" resultType="com.bangkok.info.vo.InfoVO">
+        select
+            ti.no, ti.title, ti.content, ti.writer, ti.Place, c.cityname, c.countrycode,
+            tri.filename, cat.cate_name
+        from TripInfo ti
+        join city c on ti.cityNum = c.cityNum
+        left join tripInfoImage tri on ti.no = tri.image_no
+        left join tripinfocategory cat on ti.cate_code1 = cat.cate_code1
+        where ti.no = #{no};  <!-- 상세보기에서 no로 필터링 -->
+    </select>
+
+    <select id="getTotalRow" resultType="Long">
+        select count(*)
+        from tripInfo
+    </select>
+
+    <sql id="search">
+        <if test="word != null and word != ''.toString()">
+            where
+            <trim prefixOverrides="or">
+                <if test="key.indexOf('t') >= 0">
+                    or title like '%' || #{word} || '%'
+                </if>
+                <if test="key.indexOf('c') >= 0">
+                    or content like '%' || #{word} || '%'
+                </if>
+            </trim>
+        </if>
+    </sql>
+
+    <select id="view" resultType="com.bangkok.info.vo.InfoVO">
+    SELECT 
+        ti.no, ti.title, ti.content, ti.writer, ti.writeDate,
+        c.cityname, 
+        cat.cate_code1, cat.cate_name
+    FROM tripInfo ti
+    JOIN city c ON ti.cityNum = c.cityNum
+    LEFT JOIN tripInfocategory cat ON ti.cate_code1 = cat.cate_code1
+    WHERE ti.no = #{no}
+</select>
+
+
+
+<select id="imageList" resultType="com.bangkok.info.vo.InfoImageVO">
+    SELECT image_no, no, filename
+    FROM tripInfoImage
+    WHERE no = #{no}
+</select>
+
+
+
+<insert id="write">
+		<!-- no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다. -->
+		<selectKey keyProperty="no" resultType="Long" order="BEFORE">
+			select tripInfoimage_seq.nextval from dual
+		</selectKey>
+		INSERT INTO tripInfo(no, title, content, writer, pw, cate_code1)
+		VALUES (#{no}, #{title}, #{content}, #{writer}, #{pw}, #{cate_code1})
+	</insert>
+	
+	
+
+	<!-- 추가 이미지 등록 -->
+	<insert id="writeImage" parameterType="java.util.List">
+		<!-- 먼저 GoodsVO의 no를 가져와서 세팅해 준다. -->
+	    INSERT INTO tripInfoimage(image_no, no, filename)
+	    select tripInfoimage_seq.nextval, no, filename from (
+	       <foreach collection="list" item="vo" separator=" union all ">
+		        select #{vo.no} as no, #{vo.filename} as filename 
+		        from dual 
+		   </foreach>
+		 )
+	</insert>
+
+
+
+    <update id="update">
+	<![CDATA[
+		update tripInfo
+		set title = #{title}, content = #{content}, writer = #{writer}
+		where no = ${no} and pw = #{pw}
+	]]>
+	</update>
+
+
+	<delete id="delete">
+	<![CDATA[
+		delete from tripInfo
+		where no = ${no} and pw = #{pw}
+	]]>
+	</delete>
+</mapper>

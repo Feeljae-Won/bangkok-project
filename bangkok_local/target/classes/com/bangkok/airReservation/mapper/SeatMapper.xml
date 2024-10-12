@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bangkok.airReservation.mapper.SeatMapper">
+
+	<select id="list" resultType="com.bangkok.airReservation.vo.SeatVO">
+	select
+		    seatNo,
+		    seatID,
+		    seatRow,
+		    seatCol,
+		    classNo,
+		    passengerNo
+		from
+		    Seats
+		where
+		    flightName = #{flightName};
+		
+	</select>
+	
+	 <insert id="write">
+        insert into Seats (seatNo, flightName, seatID, seatRow, seatCol, classNo, passengerNo) 
+        values ( #{seatNo}, #{flightName}, #{seatID}, #{seatRow}, #{seatCol}, #{classNo}, #{passengerNo})
+    </insert>
+    
+    <update id="minusSeat">
+    	update SeatCnt sc set(sc.cnt = sc.cnt - 
+    		(select count(*) 
+    		from passenger p, airplane_reservation ar 
+    		where p.reservationNo = ar.reservationNo 
+    		and ar.scheduleID = sc.ScheduleID)
+    		)
+    </update>
+    
+    
+	
+
+</mapper>
