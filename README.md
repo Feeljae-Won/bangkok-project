@@ -14,13 +14,13 @@ Spring Legacy Project
 * 프로젝트 기능 및 담당 역할 (총 7명)
 |**순서**|**이름**|**역할**|**담당 기능**|**비고**|
 |---|---|---|---|---|
-|1|박지현|팀장|호텔 검색, 호텔 등록 시스템| |
-|2|원필재|PM|항공 검색,항공 노선관리 시스템| |
-|3|나태준|부PM|호텔 예약, 고객센터, 호텔 후기 시스템| |
-|4|윤해연|PL|항공 예약 시스템| |
-|5|함수진|부PL|메인, 회원 관리| |
-|6|지유빈|DBA|여행플랜 짜기 시스템| |
-|7|고민희|서기|여행 정보 게시판| |
+|1|박지현|팀장|호텔 검색, 호텔 등록 시스템|-|
+|2|원필재|PM|항공 검색,항공 노선관리 시스템|-|
+|3|나태준|부PM|호텔 예약, 고객센터, 호텔 후기 시스템|-|
+|4|윤해연|PL|항공 예약 시스템|-|
+|5|함수진|부PL|메인, 회원 관리|-|
+|6|지유빈|DBA|여행플랜 짜기 시스템|-|
+|7|고민희|서기|여행 정보 게시판|-|
 
 ## 요구사항 정의
 ![bangkok-rs](/upload/bangkok-rs.png)
@@ -33,15 +33,15 @@ Spring Legacy Project
 
 |자원 분류|자원 이름|비고|
 |---|---|---|
-|**OS**|Window 10, 11| |
-|**DB 설계**|SQL Developer| |
-|**IDE**|Spring Tool Suite 3| |
-|**DBMS**|Oracle 11g XE| |
-|**WAS**|Apache Tomcat 9| |
-|**개발 프레임 워크**|JDK 11, Spring Framework| |
-|**DB 모델링**|ER-Win7| |
-|**Team Work**|Visual SVN| |
-|**Library**|jQuery, Bootstrap4, cos, JSTL, SiteMesh, Mybatis, Lombok| |
+|**OS**|Window 10, 11|-|
+|**DB 설계**|SQL Developer|-|
+|**IDE**|Spring Tool Suite 3|-|
+|**DBMS**|Oracle 11g XE|-|
+|**WAS**|Apache Tomcat 9|-|
+|**개발 프레임 워크**|JDK 11, Spring Framework|-|
+|**DB 모델링**|ER-Win7|-|
+|**Team Work**|Visual SVN|-|
+|**Library**|jQuery, Bootstrap4, cos, JSTL, SiteMesh, Mybatis, Lombok|-|
 
 ## 메뉴 흐름도
 ### 회원 관리 - 부PL 함수진
@@ -73,5 +73,5 @@ Spring Legacy Project
 - 회원 등급 관리에 필요한 데이터
 |**컬럼명**|**컬럼 ID**|**타입**|**길이**|**NN**|**PK**|**FK**|**비고**|
 |---|---|---|---|---|---|---|---|
-|등급번호|gradeNo|NUMBER|2| | O | | |
-|등급명|gradeName|VARCHAR2|20| O | | | |
+|등급번호|gradeNo|NUMBER|2|-| O |-|-|
+|등급명|gradeName|VARCHAR2|20| O |-|-|-|
