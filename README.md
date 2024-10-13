@@ -31,7 +31,7 @@ Spring Legacy Project
 
 ## 소요 자원
 
-|자원 분류|자원 이름| 비고
+|자원 분류|자원 이름|비고|
 |---|---|---|
 |**OS**|Window 10, 11| |
 |**DB 설계**|SQL Developer| |
@@ -63,7 +63,7 @@ Spring Legacy Project
 ### 게시판 댓글 기능 - DBA 지유빈
 ![uf-reply](/upload/bangkok-uf-reply.png)
 ### 여행 계획 짜기 게시판 - DBA 지유빈
-![uf-tripPlan](/upload/bangkok-uf-tripPlan)
+![uf-tripPlan](/upload/bangkok-uf-tripPlan.png)
 ![uf-tripPlanDetail](/upload/bangkok-uf-tripPlanDetail.png)
 
 ## 테이블 정의서
