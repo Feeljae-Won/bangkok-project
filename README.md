@@ -71,5 +71,8 @@ Spring Legacy Project
 ![uf-tripPlan](/upload/bangkok-uf-tripPlan.png)
 ![uf-tripPlanDetail](/upload/bangkok-uf-tripPlanDetail.png)
 
+## DB 구조 (Logical)
+![DB Logical](/upload/bangkok-dbLogical.png)
+
 ## 테이블 정의서
 - 자세한 내용은 레파지토리에 `BANGKOK_DBTable.pdf` 파일 참고
